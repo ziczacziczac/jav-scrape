@@ -1,0 +1,5 @@
+*.log
+*.csv
+*__
+venv/*
+.idea/*
