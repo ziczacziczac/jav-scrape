@@ -68,4 +68,7 @@ def matching():
 
 # matching()
 crawled_data = load_data("data/crawl/*.csv")
+mp4_video = load_data("data/video/*.csv")
+crawled_data["mp4"] = mp4_video["mp4"].values.tolist()
 crawled_data.to_sql(con=mysql_conn, name="free_jav_video_detail", if_exists="replace")
+#print(crawled_data)

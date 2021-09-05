@@ -10,6 +10,8 @@ import logging.handlers
 import pandas as pd
 import glob
 import urllib.request
+from selenium.webdriver.common.action_chains import ActionChains
+import sys
 
 # specify the URL of the archive here
 
@@ -20,6 +22,8 @@ headers = {
 }
 
 chrome_options = Options()
+chrome_options.add_argument("--mute-audio")
+chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument("--headless")  # Hides the browser window
 
 browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
@@ -32,39 +36,61 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.handlers.RotatingFileHandler(
-            "debug.log", maxBytes=10000 * 1024, backupCount=5, encoding='utf-8'),
-        logging.StreamHandler()
+            "debug.log", maxBytes=10000 * 1024, backupCount=5, encoding='utf-8')
     ]
 )
 
+def clean_browser(current_browser):
+    current_browser_id = current_browser.current_window_handle
+    handles = current_browser.window_handles
+    size = len(handles)
+
+    for x in range(size):
+        if handles[x] != current_browser_id:
+            current_browser.switch_to.window(handles[x])
+            current_browser.close()
+    current_browser.switch_to.window(current_browser_id)
+
 def get_video_link(link):
     logging.info("Get video link from %s" % link)
-    try:
-        browser.get(link)
-        time.sleep(5)
-        logging.info("Load page %s completed" % link)
-        link_add_1 = browser.find_element_by_xpath('//a[@target="_blank"]')
-        link_add_1.click()
-        time.sleep(5)
-        logging.info("Ad 1 of link %s clicked" % link)
-        link_add_2 = browser.find_element_by_xpath('//div[@id="loading"]')
-        link_add_2.click()
-        logging.info("Ad 2 of link %s clicked" % link)
-        while True:
+    retry_count = 0
+    while retry_count < 5:
+        try:
+            browser.get(link)
+            time.sleep(5)
+            # logging.info("Load page %s completed" % link)
+            try:
+                link_add_1 = browser.find_element_by_xpath('//a[@target="_blank"]')
+                link_add_1.click()
+            except:
+                return None
+            # logging.info("Ad 1 of link %s clicked" % link)
+            try:
+                link_add_2 = browser.find_element_by_xpath('//div[@id="loading"]')
+                link_add_2.click()
+            except:
+                return None
+            time.sleep(5)
+            # logging.info("Ad 2 of link %s clicked" % link)
+
             video_page = BeautifulSoup(browser.page_source, "html.parser")
             video_element = video_page.find('video')
-            try:
-                result = video_element.attrs['src']
-                logging.info("Get video from %(link)s completed with result %(result)s" %
-                             {
-                                 "link": link,
-                                 "result": result
-                             })
-                return result
-            except:
-                time.sleep(5)
-    except:
-        return None
+
+            result = video_element.attrs['src']
+            # logging.info("Get video from %(link)s completed with result %(result)s" %
+            #              {
+            #                  "link": link,
+            #                  "result": result
+            #              })
+            clean_browser(browser)
+            return result
+        except Exception as e:
+            logging.error("Get indirect link from %(link) and retry count is %(retry)s",
+                          {"link": link, "retry": str(retry_count)})
+            clean_browser(browser)
+        retry_count = retry_count + 1
+    clean_browser(browser)
+    return None
 
 
 
@@ -125,10 +151,11 @@ def get_video_info(page_source):
 
 def get_indirect_link(link):
     logging.info("Get indirect link from %s" % link)
-
-    while True:
+    retry_count = 0
+    while retry_count < 5:
+        retry_count = retry_count + 1
         try:
-            res = urllib.request.urlopen(link)
+            res = urllib.request.urlopen(link, timeout=5)
             final_url = res.geturl()
             logging.info("Got mp4 link %s" % final_url)
             return final_url
@@ -242,14 +269,15 @@ def crawl_video_data(from_idx, to_idx):
 def crawl_video_link(from_idx, to_idx):
 
     video_links = load_data("data/crawl/*.csv")['link'].values.tolist()
-    print(len(video_links))
+    # print(len(video_links))
     if to_idx >= len(video_links): to_idx = len(video_links) - 1
     video_links = video_links[from_idx:(to_idx + 1)]
-    print(video_links)
+    # print(video_links)
 
     detail_data = pd.DataFrame(columns=['link', 'mp4'])
     for link in video_links:
         if 'mm9842' in link:
+            browser.get("https://www.google.com.vn/")
             indirect_link = get_video_link(link)
             if indirect_link is not None:
                 mp4_link = get_indirect_link(indirect_link)
@@ -272,6 +300,7 @@ def crawl_video_link(from_idx, to_idx):
             detail_data = detail_data.append(video_mp4, ignore_index=True)
     return detail_data
 
+
 def load_data(pattern):
     target_files = glob.glob(pattern)
     target_df_list = []
@@ -280,6 +309,13 @@ def load_data(pattern):
         target_df_list.append(df)
     return pd.concat(target_df_list, ignore_index=True)
 
-data = crawl_video_link(0, 9)
-data.to_csv('data/video/crawled_mp4_0_9.csv')
-browser.close()
+
+# x = get_video_link("https://mm9842.com/v/13n0najr--m12xe")
+# print(x)
+# browser.quit()
+if __name__ == '__main__':
+    from_idx = sys.argv[1]
+    to_idx = sys.argv[2]
+    data = crawl_video_link(int(from_idx), int(to_idx))
+    data.to_csv('data/video/crawled_mp4_' + from_idx + '_' + to_idx + '.csv')
+    browser.quit()
