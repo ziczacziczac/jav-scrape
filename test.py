@@ -1,11 +1,6 @@
 import urllib.request
+import wget
 
-for i in range(10):
-    print(i)
-    try:
-        res = urllib.request.urlopen('https://fvs.io/redirector?token=dkVHa0dQMmhaUmFteTZYTEZyM2lJc3JZMVFCSEg5bFNOSlhTUEZsQUs5V2J0c3RScmpkVnVHTUVQbUZwWGo5SFBEamxvaGtJcU1LL2lUTTh1eDhPZGNzZ2grY3NRKytmcUhidEViaWN2Z3h1d08xcU9JY2pLbHU4ZWJHN00rRitoK3BqMm90YnA4NHV2RkhhaUtKZmJWcjlEYzJHbzFvdTFzeHQ6WlNRaGhMQWdaQTVQalMyeEtpdGdkUT09')
-        finalurl = res.geturl()
-        print(res.getcode())
-        print(finalurl)
-    except Exception as e:
-        print(str(e))
+url = 'https://www2175.ff-05.com/token=vJ4IytPF5xDh87DXsafoBw/1630990513/2405:4802::/178/4/1d/be12e41291de5ceb45746e6b7e0531d4-480p.mp4'
+filename = wget.download(url)
+print(filename)

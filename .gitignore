@@ -1,4 +1,5 @@
 *.log
 *__
+*.mp4
 venv/*
 .idea/*

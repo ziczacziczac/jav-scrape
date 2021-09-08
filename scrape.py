@@ -95,8 +95,9 @@ def get_video_link(link):
 
 
 def download_video(link, file_name):
-    logging.info("Download video from %s and save with name %s" % link, file_name)
-    r = requests.get(link, headers = headers)
+    logging.info("Download video from %(link)s and save with name %(file_name)s",
+                 {"link": link, "file_name": file_name})
+    r = requests.get(link)
 
     # download started
     count = 0
@@ -109,7 +110,8 @@ def download_video(link, file_name):
                     break
                 f.write(chunk)
 
-    logging.info("Download video from %s and save with name %s completed" % link, file_name)
+    logging.info("Download video from %(link)s and save with name %(file_name)s completed",
+                 {"link": link, "file_name": file_name})
 
 
 def get_video_info(page_source):
@@ -286,6 +288,7 @@ def crawl_video_link(from_idx, to_idx):
                     'mp4': mp4_link
                 }
                 detail_data = detail_data.append(video_mp4, ignore_index=True)
+                download_video(mp4_link, "test.mp4")
             else:
                 video_mp4 = {
                     'link': link,
