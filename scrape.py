@@ -28,8 +28,8 @@ chrome_options.add_argument("--mute-audio")
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument("--headless")  # Hides the browser window
 
-browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
-# browser = webdriver.Chrome("chromedriver", options=chrome_options)
+# browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+browser = webdriver.Chrome("chromedriver", options=chrome_options)
 
 # mysql_conn = create_engine(
 #     "mysql://root:Realkage55!@103.155.93.154:33306/jav_scrape?charset=utf8")
@@ -316,8 +316,8 @@ def load_data(pattern):
 # x = get_video_link("https://mm9842.com/v/13n0najr--m12xe")
 # print(x)
 # browser.quit()
-if __name__ == '__main__':
-    from_idx = sys.argv[1]
-    to_idx = sys.argv[2]
-    crawl_video_link(int(from_idx), int(to_idx))
-    browser.quit()
+# if __name__ == '__main__':
+from_idx = sys.argv[1]
+to_idx = sys.argv[2]
+crawl_video_link(int(from_idx), int(to_idx))
+browser.quit()
