@@ -31,8 +31,8 @@ chrome_options.add_argument("--headless")  # Hides the browser window
 # browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
 browser = webdriver.Chrome("chromedriver", options=chrome_options)
 
-mysql_conn = create_engine(
-    "mysql://root:Realkage55!@103.155.93.154:33306/jav_scrape?charset=utf8")
+# mysql_conn = create_engine(
+#     "mysql://root:Realkage55!@103.155.93.154:33306/jav_scrape?charset=utf8")
 
 logging.basicConfig(
     level=logging.INFO,
