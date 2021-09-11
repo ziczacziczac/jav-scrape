@@ -12,6 +12,8 @@ import glob
 import urllib.request
 from selenium.webdriver.common.action_chains import ActionChains
 import sys
+import wget
+from pathlib import Path
 
 # specify the URL of the archive here
 
@@ -26,7 +28,8 @@ chrome_options.add_argument("--mute-audio")
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument("--headless")  # Hides the browser window
 
-browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+# browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+browser = webdriver.Chrome("chromedriver", options=chrome_options)
 
 mysql_conn = create_engine(
     "mysql://root:Realkage55!@103.155.93.154:33306/jav_scrape?charset=utf8")
@@ -93,25 +96,14 @@ def get_video_link(link):
     return None
 
 
-
-def download_video(link, file_name):
-    logging.info("Download video from %(link)s and save with name %(file_name)s",
-                 {"link": link, "file_name": file_name})
-    r = requests.get(link)
-
-    # download started
-    count = 0
-
-    with open(file_name, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024 * 1024):
-            if chunk:
-                count = count + 1
-                if count > 10:
-                    break
-                f.write(chunk)
-
-    logging.info("Download video from %(link)s and save with name %(file_name)s completed",
-                 {"link": link, "file_name": file_name})
+def download_video(link):
+    logging.info("Download video from %(link)s",
+                 {"link": link})
+    # filename = wget.download(link, out="data/download")
+    filename = 'smt'
+    logging.info("Download video from %(link)s with name %(name)s completed",
+                 {"link": link, "name": filename})
+    return filename
 
 
 def get_video_info(page_source):
@@ -271,37 +263,44 @@ def crawl_video_data(from_idx, to_idx):
 def crawl_video_link(from_idx, to_idx):
 
     video_links = load_data("data/crawl/*.csv")['link'].values.tolist()
-    # print(len(video_links))
     if to_idx >= len(video_links): to_idx = len(video_links) - 1
     video_links = video_links[from_idx:(to_idx + 1)]
-    # print(video_links)
 
-    detail_data = pd.DataFrame(columns=['link', 'mp4'])
+    detail_data = pd.DataFrame(columns=['link', 'mp4', 'video'])
+    detail_file_name = 'data/video/crawled_mp4_' + str(from_idx) + '_' + str(to_idx) + '.csv'
+    if Path(detail_file_name).is_file():
+        detail_data = pd.read_csv(detail_file_name)
+    existed_videos = detail_data['link'].values.tolist()
     for link in video_links:
-        if 'mm9842' in link:
-            browser.get("https://www.google.com.vn/")
-            indirect_link = get_video_link(link)
-            if indirect_link is not None:
-                mp4_link = get_indirect_link(indirect_link)
-                video_mp4 = {
-                    'link': link,
-                    'mp4': mp4_link
-                }
-                detail_data = detail_data.append(video_mp4, ignore_index=True)
-                download_video(mp4_link, "test.mp4")
+        if link not in existed_videos:
+            if 'mm9842' in link:
+                browser.get("https://www.google.com.vn/")
+                indirect_link = get_video_link(link)
+                if indirect_link is not None:
+                    mp4_link = get_indirect_link(indirect_link)
+                    mp4_video = download_video(mp4_link)
+                    video_mp4 = {
+                        'link': link,
+                        'mp4': mp4_link,
+                        'video': mp4_video
+                    }
+                    detail_data = detail_data.append(video_mp4, ignore_index=True)
+
+                else:
+                    video_mp4 = {
+                        'link': link,
+                        'mp4': link,
+                        'video': link
+                    }
+                    detail_data = detail_data.append(video_mp4, ignore_index=True)
             else:
                 video_mp4 = {
                     'link': link,
-                    'mp4': link
+                    'mp4': link,
+                    'video': link
                 }
                 detail_data = detail_data.append(video_mp4, ignore_index=True)
-        else:
-            video_mp4 = {
-                'link': link,
-                'mp4': link
-            }
-            detail_data = detail_data.append(video_mp4, ignore_index=True)
-    return detail_data
+        detail_data.to_csv(detail_file_name)
 
 
 def load_data(pattern):
@@ -319,6 +318,5 @@ def load_data(pattern):
 if __name__ == '__main__':
     from_idx = sys.argv[1]
     to_idx = sys.argv[2]
-    data = crawl_video_link(int(from_idx), int(to_idx))
-    data.to_csv('data/video/crawled_mp4_' + from_idx + '_' + to_idx + '.csv')
+    crawl_video_link(int(from_idx), int(to_idx))
     browser.quit()
