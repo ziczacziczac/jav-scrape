@@ -28,12 +28,12 @@ chrome_options.add_argument("--mute-audio")
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument("--headless")  # Hides the browser window
 
-# browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
-browser = webdriver.Chrome("chromedriver", options=chrome_options)
+browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+# browser = webdriver.Chrome("chromedriver", options=chrome_options)
 
 # mysql_conn = create_engine(
 #     "mysql://root:Realkage55!@103.155.93.154:33306/jav_scrape?charset=utf8")
-
+mysql_conn = None
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -100,8 +100,8 @@ def get_video_link(link):
 def download_video(link):
     logging.info("Download video from %(link)s",
                  {"link": link})
-    # filename = wget.download(link, out="data/download")
-    filename = 'smt'
+    filename = wget.download(link, out="data/download")
+    # filename = 'smt'
     logging.info("Download video from %(link)s with name %(name)s completed",
                  {"link": link, "name": filename})
     return filename
